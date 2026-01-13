@@ -322,7 +322,10 @@ function f2t_bulk_sell_finish()
 
         -- Calculate and display margin if we have cost and revenue data
         if F2T_BULK_STATE.total_cost > 0 and F2T_BULK_STATE.total_revenue > 0 and F2T_BULK_STATE.lots_sold > 0 then
-            local cost = F2T_BULK_STATE.total_cost
+            -- Scale cost proportionally: total_cost is for all lots in cargo, but we may have sold fewer
+            -- Cost per lot = total_cost / total, then multiply by lots_sold
+            local cost_per_lot = F2T_BULK_STATE.total_cost / F2T_BULK_STATE.total
+            local cost = cost_per_lot * F2T_BULK_STATE.lots_sold
             local revenue = F2T_BULK_STATE.total_revenue
             local profit = revenue - cost
             local margin_pct = (profit / cost) * 100
