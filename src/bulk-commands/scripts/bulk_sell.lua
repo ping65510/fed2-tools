@@ -27,8 +27,8 @@ local function calculate_commodity_cost(commodity)
     for _, item in ipairs(cargo) do
         if string.lower(item.commodity) == commodity_lower then
             -- GMCP cargo has: {commodity, base, cost, origin}
-            -- cost = what we paid for this lot (75 tons)
-            total_cost = total_cost + (item.cost or 0)
+            -- cost = price per ton we paid, multiply by 75 for lot cost
+            total_cost = total_cost + ((item.cost or 0) * 75)
             lot_count = lot_count + 1
         end
     end
