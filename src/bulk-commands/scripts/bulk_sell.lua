@@ -230,7 +230,7 @@ function f2t_bulk_sell_next()
     end
 
     f2t_debug_log("[bulk-sell] Sending sell command (%d remaining)", F2T_BULK_STATE.remaining)
-    send(string.format("sell %s", F2T_BULK_STATE.commodity), false)
+    send(string.format("sell %s", string.lower(F2T_BULK_STATE.commodity)), false)
 end
 
 -- Handle successful sell
