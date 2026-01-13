@@ -56,10 +56,19 @@ local function get_all_commodities()
 end
 
 -- Start a bulk sell operation
--- @param commodity: The commodity to sell (nil = sell all cargo)
+-- @param commodity: The commodity to sell (nil = sell all cargo, supports short names like "petros")
 -- @param requested_lots: Number of lots to sell (nil = sell all of commodity)
 -- @param callback: Optional callback(commodity, lots_sold, status, error_msg) for programmatic mode
 function f2t_bulk_sell_start(commodity, requested_lots, callback)
+    -- Resolve short names to full names (if commodity specified)
+    if commodity then
+        local resolved, was_short = f2t_resolve_commodity(commodity)
+        if was_short then
+            f2t_debug_log("[bulk-sell] Resolved short name '%s' to '%s'", commodity, resolved)
+        end
+        commodity = resolved
+    end
+
     f2t_debug_log("[bulk-sell] Starting bulk sell: commodity=%s, requested=%s, mode=%s",
         tostring(commodity), tostring(requested_lots), callback and "programmatic" or "user")
 

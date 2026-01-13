@@ -2,9 +2,17 @@
 -- Handles sending commands and managing capture state
 
 -- Start a price check for a single commodity
+-- @param commodity: Commodity name (supports short names like "petros")
+-- @param callback: Optional callback for programmatic mode
 function f2t_price_check_commodity(commodity, callback)
-    -- Normalize commodity name (lowercase)
-    commodity = string.lower(commodity)
+    -- Resolve short names to full names
+    local resolved, was_short = f2t_resolve_commodity(commodity)
+    if was_short then
+        f2t_debug_log("[commodities] Resolved short name '%s' to '%s'", commodity, resolved)
+    end
+
+    -- Normalize commodity name (lowercase for game command)
+    commodity = string.lower(resolved)
 
     f2t_debug_log(string.format("[commodities] Starting price check for: %s", commodity))
 
