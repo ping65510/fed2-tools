@@ -117,6 +117,10 @@ function f2t_bulk_sell_start(commodity, requested_lots, callback)
         F2T_BULK_STATE.queue_index = 1
         F2T_BULK_STATE.total_sold = 0
         F2T_BULK_STATE.callback = callback
+        -- Aggregate stats across all commodities
+        F2T_BULK_STATE.aggregate_cost = 0
+        F2T_BULK_STATE.aggregate_revenue = 0
+        F2T_BULK_STATE.aggregate_lots_sold = 0
 
         f2t_debug_log("[bulk-sell] Initialized queue mode with %d commodities", #all_commodities)
 
@@ -259,6 +263,10 @@ function f2t_bulk_sell_success(commodity, revenue_per_ton, revenue_total)
     else
         -- Done with current commodity
         if F2T_BULK_STATE.commodity_queue then
+            -- Accumulate stats before moving to next commodity
+            F2T_BULK_STATE.aggregate_cost = F2T_BULK_STATE.aggregate_cost + (F2T_BULK_STATE.total_cost or 0)
+            F2T_BULK_STATE.aggregate_revenue = F2T_BULK_STATE.aggregate_revenue + (F2T_BULK_STATE.total_revenue or 0)
+            F2T_BULK_STATE.aggregate_lots_sold = F2T_BULK_STATE.aggregate_lots_sold + (F2T_BULK_STATE.lots_sold or 0)
             -- Move to next commodity in queue
             F2T_BULK_STATE.queue_index = F2T_BULK_STATE.queue_index + 1
             f2t_bulk_sell_next_commodity()
@@ -377,16 +385,50 @@ function f2t_bulk_sell_finish_all()
 
     -- User mode: show formatted output
     if not callback then
+        local msg
         if remaining_lots == 0 then
             -- Cargo hold is completely empty
-            cecho(string.format("\n<green>[bulk-sell]<reset> Complete: Sold all cargo - %d lots (%d tons)\n",
-                total_sold, total_tons))
+            msg = string.format("\n<green>[bulk-sell]<reset> Complete: Sold all cargo - %d lots (%d tons)",
+                total_sold, total_tons)
         else
             -- Still have unsold cargo
             local remaining_tons = remaining_lots * 75
-            cecho(string.format("\n<green>[bulk-sell]<reset> Complete: Sold %d lots (%d tons) - %d lots (%d tons) remain unsold\n",
-                total_sold, total_tons, remaining_lots, remaining_tons))
+            msg = string.format("\n<green>[bulk-sell]<reset> Complete: Sold %d lots (%d tons) - %d lots (%d tons) remain unsold",
+                total_sold, total_tons, remaining_lots, remaining_tons)
         end
+
+        -- Calculate and display aggregate margin info
+        local cost = F2T_BULK_STATE.aggregate_cost or 0
+        local revenue = F2T_BULK_STATE.aggregate_revenue or 0
+        local lots_sold = F2T_BULK_STATE.aggregate_lots_sold or 0
+
+        if cost > 0 and revenue > 0 and lots_sold > 0 then
+            local profit = revenue - cost
+            local margin_pct = (profit / cost) * 100
+
+            local avg_cost_per_ton = math.floor(cost / (lots_sold * 75))
+            local avg_revenue_per_ton = math.floor(revenue / (lots_sold * 75))
+
+            -- Color code margin
+            local margin_color = "white"
+            if margin_pct >= 40 then
+                margin_color = "green"
+            elseif margin_pct >= 20 then
+                margin_color = "yellow"
+            elseif margin_pct < 0 then
+                margin_color = "red"
+            end
+
+            -- Color code profit
+            local profit_color = profit >= 0 and "green" or "red"
+
+            msg = msg .. string.format("\n  <dim_grey>Cost: <white>%d ig<reset> <dim_grey>(%d ig/ton)<reset> | <dim_grey>Revenue: <white>%d ig<reset> <dim_grey>(%d ig/ton)<reset>",
+                cost, avg_cost_per_ton, revenue, avg_revenue_per_ton)
+            msg = msg .. string.format("\n  <dim_grey>Profit: <%s>%d ig<reset> | <dim_grey>Margin: <%s>%.1f%%<reset>",
+                profit_color, profit, margin_color, margin_pct)
+        end
+
+        cecho(msg .. "\n")
 
     -- Programmatic mode: call callback with data
     else
@@ -399,4 +441,7 @@ function f2t_bulk_sell_finish_all()
     F2T_BULK_STATE.command = nil
     F2T_BULK_STATE.commodity_queue = nil
     F2T_BULK_STATE.callback = nil
+    F2T_BULK_STATE.aggregate_cost = 0
+    F2T_BULK_STATE.aggregate_revenue = 0
+    F2T_BULK_STATE.aggregate_lots_sold = 0
 end
