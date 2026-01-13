@@ -10,7 +10,8 @@ local function load_commodities()
         return commodity_cache
     end
 
-    local filePath = getMudletHomeDir() .. "/@PKGNAME@/shared/commodities.json"
+    -- Note: @PKGNAME@ substitution only works in XML, use actual package name
+    local filePath = getMudletHomeDir() .. "/fed2-tools/shared/commodities.json"
     local file = io.open(filePath, "r")
 
     if not file then
