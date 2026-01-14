@@ -38,7 +38,7 @@ jobs:
             VERSION="${BASE_VERSION}-${SHORT_SHA}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "is_release=false" >> $GITHUB_OUTPUT
-            echo "release_name=dev" >> $GITHUB_OUTPUT
+            echo "release_name=prerelease" >> $GITHUB_OUTPUT
           fi
 
       - name: Build package
@@ -51,12 +51,12 @@ jobs:
           name: fed2-tools-${{ steps.version.outputs.version }}
           path: build/*.mpackage
 
-      - name: Update dev release
+      - name: Update prerelease
         if: steps.version.outputs.is_release == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: dev
-          name: Development Build
+          tag_name: prerelease
+          name: Pre-release Build
           body: |
             Latest development build from main branch.
 
