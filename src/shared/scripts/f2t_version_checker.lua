@@ -7,6 +7,12 @@ F2T_VERSION_CHECK_STATE = {
     error_handler_id = nil
 }
 
+-- Check if version string is a prerelease (contains hyphen suffix like -abc123)
+function f2t_version_is_prerelease(version)
+    if not version then return false end
+    return version:match("^%d+%.%d+%.%d+%-") ~= nil
+end
+
 function f2t_check_latest_version()
     -- Show current version immediately
     local current = F2T_VERSION
@@ -14,6 +20,14 @@ function f2t_check_latest_version()
         cecho("\n<green>[fed2-tools]<reset> Version: <yellow>development<reset>\n")
         return
     end
+
+    -- Check if this is a prerelease version
+    if f2t_version_is_prerelease(current) then
+        cecho(string.format("\n<green>[fed2-tools]<reset> Prerelease v%s\n", current))
+        cecho("<dim_grey>  (Cannot check for updates on prerelease versions)<reset>\n")
+        return
+    end
+
     cecho(string.format("\n<green>[fed2-tools]<reset> Version: %s\n", current))
 
     -- Check if getHTTP available (Mudlet 4.10+)
