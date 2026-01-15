@@ -4,7 +4,8 @@
 F2T_VERSION_CHECK_STATE = {
     checking = false,
     handler_id = nil,
-    error_handler_id = nil
+    error_handler_id = nil,
+    timeout_timer_id = nil
 }
 
 -- Check if version string is a prerelease (contains hyphen suffix like -abc123)
@@ -68,7 +69,7 @@ function f2t_check_latest_version()
     )
 
     -- Set timeout
-    tempTimer(10, function()
+    F2T_VERSION_CHECK_STATE.timeout_timer_id = tempTimer(10, function()
         if F2T_VERSION_CHECK_STATE.checking then
             cecho("<dim_grey>  (Update check timed out)<reset>\n")
             f2t_version_check_cleanup()
@@ -115,6 +116,10 @@ function f2t_version_check_cleanup()
     if F2T_VERSION_CHECK_STATE.error_handler_id then
         killAnonymousEventHandler(F2T_VERSION_CHECK_STATE.error_handler_id)
         F2T_VERSION_CHECK_STATE.error_handler_id = nil
+    end
+    if F2T_VERSION_CHECK_STATE.timeout_timer_id then
+        killTimer(F2T_VERSION_CHECK_STATE.timeout_timer_id)
+        F2T_VERSION_CHECK_STATE.timeout_timer_id = nil
     end
     F2T_VERSION_CHECK_STATE.checking = false
 end
