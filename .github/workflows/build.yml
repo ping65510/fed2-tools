@@ -69,15 +69,27 @@ jobs:
           # Replace existing dev release assets
           fail_on_unmatched_files: true
 
-      - name: Get commit message
+      - name: Generate release notes
         if: steps.version.outputs.is_release == 'true'
-        id: commit
+        id: release_notes
         run: |
-          # Get the commit message (subject and body) for the tagged commit
-          COMMIT_MSG=$(git log -1 --format='%B' HEAD)
+          # Get the current tag
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+
+          # Find the previous tag (exclude current)
+          PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -v "^prerelease$" | grep -v "^${CURRENT_TAG}$" | head -n1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            # No previous tag, get all commits
+            COMMITS=$(git log --format='- %s' HEAD)
+          else
+            # Get commits between previous tag and current
+            COMMITS=$(git log --format='- %s' "${PREVIOUS_TAG}..HEAD")
+          fi
+
           # Store in output using heredoc for multiline
-          echo "message<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create tagged release
@@ -88,7 +100,8 @@ jobs:
           body: |
             ## fed2-tools ${{ steps.version.outputs.release_name }}
 
-            ${{ steps.commit.outputs.message }}
+            ### Changes
+            ${{ steps.release_notes.outputs.notes }}
           draft: false
           prerelease: false
           files: build/*.mpackage
