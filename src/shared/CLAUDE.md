@@ -286,6 +286,41 @@ end
 
 Map component uses this to defer GMCP-dependent initialization until after connection.
 
+## Version Checker (`f2t_version_checker.lua`)
+
+Checks GitHub releases API for the latest version when user runs `f2t version`.
+
+**Command:** `f2t version`
+
+**Behavior:**
+1. Shows current version immediately
+2. If prerelease version (e.g., `1.0.0-abc123`), skips update check
+3. If `getHTTP` unavailable (Mudlet <4.10), skips update check
+4. Otherwise, async fetches latest release from GitHub API
+5. Compares versions and displays update availability
+
+**Global State:** `F2T_VERSION_CHECK_STATE`
+
+```lua
+{
+    checking = false,           -- Is check in progress?
+    handler_id = nil,           -- Success event handler ID
+    error_handler_id = nil,     -- Error event handler ID
+    timeout_timer_id = nil      -- Timeout timer ID
+}
+```
+
+**Functions:**
+
+- `f2t_check_latest_version()` - Main entry point, displays version and checks for updates
+- `f2t_version_is_prerelease(version)` - Returns true if version contains hyphen suffix
+- `f2t_version_is_newer(v1, v2)` - Semver comparison, returns true if v1 > v2
+- `f2t_version_check_cleanup()` - Kills handlers and resets state
+
+**Requirements:**
+- Mudlet 4.10+ for update checking (gracefully degrades on older versions)
+- Network access to `api.github.com`
+
 ## Rank Management (`f2t_rank.lua`)
 
 Federation 2 rank checking utilities. Supports all 16 ranks.
